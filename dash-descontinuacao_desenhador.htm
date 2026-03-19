@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Inteligente - E-mails</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; }
+        .header-title { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        .kpi-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: center; border: none; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: transform 0.2s; }
+        .kpi-card:hover { transform: translateY(-5px); }
+        .kpi-icon { font-size: 2.2rem; margin-bottom: 10px; }
+        .kpi-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; font-weight: 700; margin-bottom: 5px; }
+        .kpi-value { font-size: 2.2rem; font-weight: 800; margin: 0; }
+        .panel { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 30px; height: 100%; }
+        .table-wrapper { max-height: 400px; overflow-y: auto; }
+        thead { position: sticky; top: 0; background-color: #fff; z-index: 1; box-shadow: 0 2px 2px -1px rgba(0,0,0,0.1); }
+        #dashboard-content { display: none; animation: fadeIn 0.8s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .upload-area { border: 2px dashed #1e3c72; border-radius: 15px; padding: 50px; text-align: center; background: #f8fbff; margin-bottom: 30px; cursor: pointer; transition: 0.3s; }
+        .upload-area:hover { background: #eef4ff; }
+        .chart-container { position: relative; height: 350px; width: 100%; }
+    </style>
+</head>
+<body>
+
+<div class="container py-4">
+    
+    <div class="header-title text-center">
+        <h2 class="fw-bold"><i class="fa-solid fa-chart-line me-2"></i> Dashboard Analítico de Comunicação</h2>
+        <p class="mb-0 text-light opacity-75">Métricas de Engajamento e Leitura de E-mails</p>
+    </div>
+
+    <div class="upload-area" id="upload-section" onclick="document.getElementById('csv-file').click()">
+        <i class="fa-solid fa-cloud-arrow-up fa-4x text-primary mb-3"></i>
+        <h4 class="fw-bold text-primary">Clique aqui para carregar o seu ficheiro CSV</h4>
+        <p class="text-muted">A leitura é feita de forma segura no seu próprio navegador.</p>
+       <input type="file" id="csv-file" class="d-none">
+    </div>
+
+    <div id="dashboard-content">
+        
+        <h5 class="mb-3 text-secondary fw-bold border-bottom pb-2"><i class="fa-solid fa-calculator me-2"></i> Indicadores Globais (E-mails)</h5>
+        
+        <div class="row g-3 mb-4">
+            <div class="col-md-3 col-sm-6">
+                <div class="kpi-card border-bottom border-4 border-primary">
+                    <i class="fa-solid fa-paper-plane kpi-icon text-primary"></i>
+                    <p class="kpi-title">Total de Envios</p>
+                    <p class="kpi-value text-primary" id="kpi-total-emails">0</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="kpi-card border-bottom border-4 border-success">
+                    <i class="fa-solid fa-envelope-open-text kpi-icon text-success"></i>
+                    <p class="kpi-title">Leram o E-mail</p>
+                    <p class="kpi-value text-success" id="kpi-emails-lidos">0</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="kpi-card border-bottom border-4 border-warning">
+                    <i class="fa-solid fa-envelope kpi-icon text-warning"></i>
+                    <p class="kpi-title">Enviado mas não lido</p>
+                    <p class="kpi-value text-warning" id="kpi-emails-nao-lidos">0</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="kpi-card border-bottom border-4 border-secondary">
+                    <i class="fa-solid fa-clock-rotate-left kpi-icon text-secondary"></i>
+                    <p class="kpi-title">Aguardando Status</p>
+                    <p class="kpi-value text-secondary" id="kpi-emails-aguardando">0</p>
+                </div>
+            </div>
+        </div>
+
+        <h5 class="mb-3 text-secondary fw-bold border-bottom pb-2 mt-5"><i class="fa-solid fa-building me-2"></i> Visão por Clientes (Empresas)</h5>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="kpi-card bg-success text-white shadow">
+                    <p class="kpi-title text-light">Empresas Informadas</p>
+                    <p class="small text-white-50 mb-2">(Pelo menos 1 funcionário leu)</p>
+                    <p class="kpi-value" id="kpi-empresas-informadas">0</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="kpi-card bg-danger text-white shadow">
+                    <p class="kpi-title text-light">Empresas Não Informadas</p>
+                    <p class="small text-white-50 mb-2">(Ninguém leu o e-mail)</p>
+                    <p class="kpi-value" id="kpi-empresas-nao-informadas">0</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="kpi-card bg-secondary text-white shadow">
+                    <p class="kpi-title text-light">Empresas Pendentes</p>
+                    <p class="small text-white-50 mb-2">(Apenas aguardando status)</p>
+                    <p class="kpi-value" id="kpi-empresas-pendentes">0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-lg-5">
+                <div class="panel">
+                    <h5 class="fw-bold text-secondary text-center mb-4">Distribuição de Status (E-mails)</h5>
+                    <div class="chart-container">
+                        <canvas id="statusPieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="panel">
+                    <h5 class="fw-bold text-success text-center mb-4"><i class="fa-solid fa-trophy"></i> Ranking de Engajamento</h5>
+                    <p class="text-muted text-center small mb-3">Top 10 Empresas com mais e-mails lidos</p>
+                    <div class="chart-container">
+                        <canvas id="engagementBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="panel">
+                    <h4 class="text-danger fw-bold"><i class="fa-solid fa-radar me-2"></i> Radar: Clientes que NÃO abriram o e-mail</h4>
+                    <p class="text-muted small">Lista de empresas onde nenhuma comunicação foi registada como lida. Analise os motivos para atuação direcionada.</p>
+                    
+                    <div class="table-wrapper mt-3 border rounded">
+                        <table class="table table-hover table-sm align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nome da Empresa</th>
+                                    <th class="text-center text-warning">Enviado, mas não lido</th>
+                                    <th class="text-center text-danger">Não recebeu</th>
+                                    <th class="text-center text-dark">Não foi enviado (Spam)</th>
+                                    <th class="text-center text-secondary">Aguardando Leitura</th>
+                                </tr>
+                            </thead>
+                            <tbody id="radar-table-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    let pieChartInstance = null;
+    let barChartInstance = null;
+
+    document.getElementById('csv-file').addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            // Adicionado transformHeader para garantir que espaços invisíveis não quebrem a leitura
+            transformHeader: function(h) {
+                return h.trim();
+            },
+            complete: function(results) {
+                processData(results.data);
+                document.getElementById('upload-section').style.display = 'none';
+                document.getElementById('dashboard-content').style.display = 'block';
+            }
+        });
+    });
+
+    function classificarStatus(statusOriginal) {
+        if (!statusOriginal) return 'Desconhecido';
+        const s = statusOriginal.trim();
+        
+        const leuOEmail = ['Read', 'Clicked a link', 'Delivered, read, user unsubscribed'];
+        const naoRecebeu = ['Other reasons'];
+        const enviadoNaoLido = ['Delivered', 'Delivered and read by a potential bot', 'Delivered, read, and clicked by a potential bot'];
+        const naoEnviado = ['Spam by server'];
+        const aguardando = ['Sent, delivery status not known yet'];
+
+        if (leuOEmail.includes(s)) return 'Leu o email';
+        if (naoRecebeu.includes(s)) return 'Não recebeu o email';
+        if (enviadoNaoLido.includes(s)) return 'Foi enviado mas não lido';
+        if (naoEnviado.includes(s)) return 'Não foi enviado';
+        if (aguardando.includes(s)) return 'Aguardando status de leitura';
+        
+        return 'Outro status';
+    }
+
+    function processData(data) {
+        let totalEmails = 0;
+        let cLeu = 0, cNaoRecebeu = 0, cEnviadoNaoLido = 0, cNaoEnviado = 0, cAguardando = 0, cOutro = 0;
+        let companiesData = {};
+
+        data.forEach(row => {
+            // Procura as colunas com flexibilidade
+            const empresa = row['Nome Empresa'] || row['Nome_Empresa'] || row[Object.keys(row)[0]]; 
+            const rawStatus = row['Status'];
+
+            // Se não houver nome de empresa ou status preenchido nesta linha, ignora
+            if (!empresa || typeof rawStatus === 'undefined') return;
+
+            totalEmails++;
+            const classificado = classificarStatus(rawStatus);
+
+            if(classificado === 'Leu o email') cLeu++;
+            else if(classificado === 'Não recebeu o email') cNaoRecebeu++;
+            else if(classificado === 'Foi enviado mas não lido') cEnviadoNaoLido++;
+            else if(classificado === 'Não foi enviado') cNaoEnviado++;
+            else if(classificado === 'Aguardando status de leitura') cAguardando++;
+            else cOutro++;
+
+            if (!companiesData[empresa]) {
+                companiesData[empresa] = { leu: 0, naoRecebeu: 0, enviadoNaoLido: 0, naoEnviado: 0, aguardando: 0, total: 0 };
+            }
+
+            companiesData[empresa].total++;
+            if(classificado === 'Leu o email') companiesData[empresa].leu++;
+            if(classificado === 'Não recebeu o email') companiesData[empresa].naoRecebeu++;
+            if(classificado === 'Foi enviado mas não lido') companiesData[empresa].enviadoNaoLido++;
+            if(classificado === 'Não foi enviado') companiesData[empresa].naoEnviado++;
+            if(classificado === 'Aguardando status de leitura') companiesData[empresa].aguardando++;
+        });
+
+        let empInformadas = 0, empNaoInformadas = 0, empPendentes = 0;
+        let radarList = [];
+        let topEngaged = [];
+
+        for (const [empresa, stats] of Object.entries(companiesData)) {
+            if (stats.leu > 0) {
+                empInformadas++;
+                topEngaged.push({ empresa: empresa, lidos: stats.leu });
+            } else {
+                if (stats.aguardando === stats.total) {
+                    empPendentes++;
+                } else {
+                    empNaoInformadas++;
+                    radarList.push({
+                        empresa: empresa,
+                        enviadoNaoLido: stats.enviadoNaoLido,
+                        naoRecebeu: stats.naoRecebeu,
+                        naoEnviado: stats.naoEnviado,
+                        aguardando: stats.aguardando
+                    });
+                }
+            }
+        }
+
+        document.getElementById('kpi-total-emails').innerText = totalEmails.toLocaleString('pt-PT');
+        document.getElementById('kpi-emails-lidos').innerText = cLeu.toLocaleString('pt-PT');
+        document.getElementById('kpi-emails-nao-lidos').innerText = cEnviadoNaoLido.toLocaleString('pt-PT');
+        document.getElementById('kpi-emails-aguardando').innerText = cAguardando.toLocaleString('pt-PT');
+        document.getElementById('kpi-empresas-informadas').innerText = empInformadas.toLocaleString('pt-PT');
+        document.getElementById('kpi-empresas-nao-informadas').innerText = empNaoInformadas.toLocaleString('pt-PT');
+        document.getElementById('kpi-empresas-pendentes').innerText = empPendentes.toLocaleString('pt-PT');
+
+        radarList.sort((a, b) => b.enviadoNaoLido - a.enviadoNaoLido);
+        
+        const tbody = document.getElementById('radar-table-body');
+        tbody.innerHTML = ''; 
+        radarList.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="fw-bold text-secondary py-2">${item.empresa}</td>
+                <td class="text-center fw-bold text-warning">${item.enviadoNaoLido}</td>
+                <td class="text-center fw-bold text-danger">${item.naoRecebeu}</td>
+                <td class="text-center fw-bold text-dark">${item.naoEnviado}</td>
+                <td class="text-center fw-bold text-secondary">${item.aguardando}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        renderPieChart(cLeu, cEnviadoNaoLido, cNaoRecebeu, cAguardando, cNaoEnviado);
+
+        topEngaged.sort((a, b) => b.lidos - a.lidos);
+        const top10 = topEngaged.slice(0, 10);
+        renderBarChart(top10.map(i => i.empresa), top10.map(i => i.lidos));
+    }
+
+    function renderPieChart(leu, enviadoNaoLido, naoRecebeu, aguardando, naoEnviado) {
+        const ctx = document.getElementById('statusPieChart').getContext('2d');
+        if (pieChartInstance) pieChartInstance.destroy();
+
+        pieChartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Leu o e-mail', 'Enviado, não lido', 'Não recebeu', 'Aguardando', 'Não foi enviado'],
+                datasets: [{
+                    data: [leu, enviadoNaoLido, naoRecebeu, aguardando, naoEnviado],
+                    backgroundColor: ['#198754', '#ffc107', '#dc3545', '#6c757d', '#212529'],
+                    borderWidth: 2,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12 } }
+                }
+            }
+        });
+    }
+
+    function renderBarChart(labels, data) {
+        const ctx = document.getElementById('engagementBarChart').getContext('2d');
+        if (barChartInstance) barChartInstance.destroy();
+
+        barChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Quantidade de e-mails lidos',
+                    data: data,
+                    backgroundColor: 'rgba(25, 135, 84, 0.85)',
+                    borderColor: '#198754',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { x: { beginAtZero: true } }
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
